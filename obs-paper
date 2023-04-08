@@ -1,0 +1,143 @@
+#!/bin/bash
+
+ARGC=("$#")
+ARGV=("$@")
+
+FILE=""
+TITLE=""
+LINK=""
+TAG=""
+
+function display_usage {
+  echo "usage: obs-paper <pdf> <title> <options>"
+  echo "<options>"
+  echo "-l|--link <link file> (no ext)	insert graph link to selected file"
+  echo "-t|--tag <tag>									insert tag"
+  exit 1;
+}
+
+function check {
+	if [ -d "./.obsidian" ]; then
+    return 0
+  else
+  	echo "Warning: building folder without an obsidian vault detected"
+  	read -p "continue building the folders?(Y/n):  " answer
+  	case ${answer:0:1} in
+    	y|Y )
+        return 0
+    	;;
+    	* )
+        exit 1
+    	;;
+		esac
+	fi
+}
+
+function process_cl {
+	for ((i=0; i<$ARGC; i++))
+	do
+		INPUT=${ARGV[i]}
+  	case $INPUT in
+    	-l|--list)
+				LINK=${ARGV[++i]}
+				if [ -z "$LINK" ]; then
+					echo "Error:  link option is empty"
+					display_usage
+				fi
+      	;;
+      -t|--tag)
+				TAG=${ARGV[++i]}
+				if [ -z "$TAG" ]; then
+					echo "Error:  link option is empty"
+					display_usage
+				fi
+				;;
+    	-*|--*)
+      	echo "Error:  unknown option $INPUT"
+      	display_usage
+      	;;
+    	*)
+      	if [ $i -eq 0 ]; then
+      		FILE=$INPUT
+      		if [ -f "$FILE" ]; then
+    				echo "Status: running on $FILE"
+  				else
+  					echo "Error:  file could not be read - $FILE"
+  					display_usage
+					fi
+      	elif [ $i -eq 1 ]; then
+      		TITLE=$INPUT
+      	else
+      		echo "Error:  unknown option $INPUT"
+      		display_usage
+      	fi
+      	;;
+  	esac
+	done
+
+}
+
+function main {
+	process_cl
+	check
+
+	if [ -z "$TITLE" ]
+	then
+      echo "Error:  title input is empty"
+      display_usage
+	else
+			echo "Status: building $TITLE directory"
+      mkdir -p $TITLE
+	fi
+
+	NEWFILE="$TITLE/$TITLE.md"
+	echo "Status: building markdown file"
+	touch $NEWFILE
+
+	echo "---" >> $NEWFILE
+	echo "title: ${TITLE//[_]/ }" >> $NEWFILE
+	echo "---" >> $NEWFILE
+	
+	if [ -n "$TAG" ] 
+	then
+		echo "#${TAG}" >> $NEWFILE
+	fi
+
+	echo "" >> $NEWFILE
+
+	echo "## Links" >> $NEWFILE
+	echo "---" >> $NEWFILE
+	if [ -z "$LINK" ] 
+	then
+		echo "[insert links here]" >> $NEWFILE
+	else 
+		echo "[[${LINK}]]" >> $NEWFILE
+	fi
+	echo "" >> $NEWFILE
+
+	echo "## BibTex" >> $NEWFILE
+	echo "---" >> $NEWFILE
+	echo "\`\`\`" >> $NEWFILE
+	echo "[insert bibtex here]" >> $NEWFILE
+	echo "\`\`\`" >> $NEWFILE
+	echo "" >> $NEWFILE
+
+	echo "## Notes" >> $NEWFILE
+	echo "---" >> $NEWFILE
+	echo "[insert notes here]" >> $NEWFILE
+	echo "" >> $NEWFILE
+
+
+	echo "## Text" >> $NEWFILE
+	echo "---" >> $NEWFILE
+
+	echo "Status: extracting text from pdf"
+	pdftotext $FILE - >> $NEWFILE
+
+	mv $FILE $TITLE
+}
+
+
+main
+
+exit 0;
