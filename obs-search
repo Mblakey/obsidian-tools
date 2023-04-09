@@ -1,0 +1,59 @@
+#!/bin/bash
+
+ARGC=("$#")
+ARGV=("$@")
+
+declare -a SEARCH=()
+OPEN=1
+LEN=0
+
+function display_usage {
+  echo "usage: obs-search <queries ...>"
+  echo "<options>"
+  echo "-o|--open <link file> (no ext)	open all pdfs that match (system default application)"
+  exit 1;
+}
+
+
+function process_cl {
+	for ((i=0; i<$ARGC; i++))
+	do
+		INPUT=${ARGV[i]}
+  	case $INPUT in
+    	-o|--open)
+				OPEN=0
+      	;;
+    	-*|--*)
+      	echo "Error: Unknown option $INPUT"
+      	display_usage
+      	;;
+    	*)
+      	SEARCH+=($INPUT)
+      	;;
+  	esac
+	done
+
+	LEN=${#SEARCH[@]}
+	if [ "$LEN" -eq "0" ]; then
+		echo "Error:  no strings for query!"
+		display_usage
+	fi
+}
+
+function main {
+	for (( i=0; i<${LEN}; i++ ));
+	do
+		if [ $i -eq 0 ]; then
+			QUERY=${SEARCH[i]}
+		else
+			QUERY="$QUERY\|${SEARCH[i]}"
+		fi
+	done
+
+	echo "Status: searching for $QUERY"
+	pdfgrep -lr . -e $QUERY
+}
+
+process_cl
+main
+exit 0;

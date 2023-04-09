@@ -126,14 +126,6 @@ function main {
 	echo "---" >> $NEWFILE
 	echo "[insert notes here]" >> $NEWFILE
 	echo "" >> $NEWFILE
-
-
-	echo "## Text" >> $NEWFILE
-	echo "---" >> $NEWFILE
-
-	echo "Status: extracting text from pdf"
-	pdftotext $FILE - >> $NEWFILE
-
 	mv $FILE $TITLE
 }
 
