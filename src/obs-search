@@ -51,7 +51,12 @@ function main {
 	done
 
 	echo "Status: searching for $QUERY"
-	pdfgrep -lr . -e $QUERY
+
+	if [ $OPEN -eq 0 ]; then
+		pdfgrep -lr . -e $QUERY | xargs -L 1 open
+	else
+		pdfgrep -lr . -e $QUERY
+	fi
 }
 
 process_cl
