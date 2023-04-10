@@ -3,7 +3,7 @@
 ARGC=("$#")
 ARGV=("$@")
 
-declare -a SEARCH=()
+SEARCH=()
 OPEN=1
 LEN=0
 
@@ -45,7 +45,7 @@ function process_cl {
       	display_usage
       	;;
     	*)
-      	SEARCH+=($INPUT)
+      	SEARCH+=("$INPUT")
       	;;
   	esac
 	done
@@ -61,20 +61,29 @@ function main {
 	for (( i=0; i<${LEN}; i++ ));
 	do
 		if [ $i -eq 0 ]; then
-			QUERY=${SEARCH[i]}
+			QUERY="${SEARCH[$i]}"
 		else
-			QUERY="$QUERY\|${SEARCH[i]}"
+			QUERY="$QUERY|${SEARCH[$i]}"
 		fi
 	done
 
-	echo "Status: searching for $QUERY"
+	echo "Status: searching for ${QUERY}"
 
-	if [ $OPEN -eq 0 ]; then
-		pdfgrep -lr . -e $QUERY | xargs -L 1 open
+	if [ "$LEN" -gt 1 ]; then 
+		if [ $OPEN -eq 0 ]; then
+			pdfgrep -lr . -e "'$QUERY'" | xargs -L 1 open
+		else
+			pdfgrep -lr . -e "'$QUERY'"
+		fi
 	else
-		pdfgrep -lr . -e $QUERY
-	fi
-}
+
+		if [ $OPEN -eq 0 ]; then
+			pdfgrep -lr . -e "$QUERY" | xargs -L 1 open
+		else
+			pdfgrep -lr . -e "$QUERY"
+		fi
+	fi;
+}	
 
 check
 process_cl
