@@ -5,14 +5,17 @@ ARGV=("$@")
 
 FILE=""
 TITLE=""
-LINK=""
-TAG=""
+LINKS=()
+TAGS=()
+
+T=0
+L=0
 
 function display_usage {
   echo "usage: obs-paper <pdf> <title> <options>"
   echo "<options>"
-  echo "-l|--link <link file> (no ext)	insert graph link to selected file"
-  echo "-t|--tag <tag>									insert tag"
+  echo "-l|--link <link file(s)> (no ext)	insert graph link to selected file"
+  echo "-t|--tag <tag(s)>									insert tag"
   exit 1;
 }
 
@@ -39,18 +42,12 @@ function process_cl {
 		INPUT=${ARGV[i]}
   	case $INPUT in
     	-l|--link)
-				LINK=${ARGV[++i]}
-				if [ -z "$LINK" ]; then
-					echo "Error:  link option is empty"
-					display_usage
-				fi
+				L=1
+				T=0
       	;;
       -t|--tag)
-				TAG=${ARGV[++i]}
-				if [ -z "$TAG" ]; then
-					echo "Error:  link option is empty"
-					display_usage
-				fi
+				L=0
+				T=1
 				;;
     	-*|--*)
       	echo "Error:  unknown option $INPUT"
@@ -68,8 +65,11 @@ function process_cl {
       	elif [ $i -eq 1 ]; then
       		TITLE=$INPUT
       	else
-      		echo "Error:  unknown option $INPUT"
-      		display_usage
+      		if [ $L -eq 1 ]; then
+      			LINKS+=("$INPUT")
+      		elif [ $T -eq 1 ]; then 
+      			TAGS+=("$INPUT")
+      		fi;
       	fi
       	;;
   	esac
@@ -97,11 +97,13 @@ function main {
 	echo "---" >> $NEWFILE
 	echo "title: ${TITLE//[_]/ }" >> $NEWFILE
 	echo "---" >> $NEWFILE
-	
-	if [ -n "$TAG" ] 
-	then
-		echo "#${TAG}" >> $NEWFILE
-	fi
+
+
+  for (( i=0; i<${#TAGS[@]}; i++ ));
+  do
+  	echo "#${TAGS[$i]}" >> $NEWFILE
+	done
+	echo "#new" >> $NEWFILE
 	echo "" >> $NEWFILE
 
 	BASE="$(basename $FILE)"
@@ -110,24 +112,18 @@ function main {
 
 	echo "## Links" >> $NEWFILE
 	echo "---" >> $NEWFILE
-	if [ -z "$LINK" ] 
-	then
-		echo "[insert links here]" >> $NEWFILE
-	else 
-		echo "[[${LINK}]]" >> $NEWFILE
-	fi
+
+	for (( i=0; i<${#LINKS[@]}; i++ ));
+  do
+  	echo "#${LINKS[$i]}" >> $NEWFILE
+	done
 	echo "" >> $NEWFILE
 
 	echo "## BibTex" >> $NEWFILE
 	echo "---" >> $NEWFILE
 	echo "\`\`\`" >> $NEWFILE
-	echo "[insert bibtex here]" >> $NEWFILE
+	pdf2bib $FILE >> $NEWFILE
 	echo "\`\`\`" >> $NEWFILE
-	echo "" >> $NEWFILE
-
-	echo "## Notes" >> $NEWFILE
-	echo "---" >> $NEWFILE
-	echo "[insert notes here]" >> $NEWFILE
 	echo "" >> $NEWFILE
 	
 	mv $FILE $TITLE
